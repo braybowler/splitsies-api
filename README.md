@@ -1,58 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# splitsies-api
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 13 REST API for **Splitsies** — a group trip expense-splitting app. Groups track trip expenses, split them among members, and get an end-of-trip settle-up report.
 
-## About Laravel
+- **Architecture & conventions:** see [`CLAUDE.md`](./CLAUDE.md)
+- **Design source of truth:** Obsidian — `splitsies-plan.md` + `Features/Splitsies/`
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Quick start (easiest — SQLite, no external services)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Requires **PHP 8.5** and **Composer**. Nothing else — no MySQL, no AWS.
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```sh
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate        # creates the SQLite database automatically
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+API is now live at **http://localhost:8000**.
 
-## Contributing
+That's it. The defaults in `.env.example` use SQLite for the database and the `log` mail driver, so you can run and develop everything — including the magic-link auth flow — without configuring anything external.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Magic-link login in local dev
 
-## Code of Conduct
+Local mail defaults to `MAIL_MAILER=log`, so magic-link emails aren't actually sent — they're written to:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```
+storage/logs/laravel.log
+```
 
-## Security Vulnerabilities
+Trigger a login, then grab the link from the bottom of that log. No SES account needed to develop auth.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Tip: `php artisan pail` tails the logs live in a readable format.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Running everything at once (optional)
+
+```sh
+composer dev
+```
+
+Runs the dev server, queue worker, and live log viewer together (via `concurrently`).
+
+## Tests & formatting
+
+```sh
+composer test            # or: php artisan test
+./vendor/bin/pint        # format code (Laravel Pint)
+```
+
+---
+
+## Switching to MySQL (matches production)
+
+Production uses **MySQL 8**. To develop against MySQL instead of SQLite, set these in `.env` and re-run `php artisan migrate`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=splitsies
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+## Production services (not needed for local dev)
+
+- **AWS SES** for magic-link email (`MAIL_MAILER=ses`). ⚠️ Request SES production access early — sandbox only sends to verified addresses, and email *is* the auth channel.
+- **AWS S3** for receipt-photo storage (signed URLs).
+- **Frankfurter** (`frankfurter.dev`, no key) + `open.er-api.com` fallback for FX rates.
+
+See [`CLAUDE.md`](./CLAUDE.md) for the full list of environment variables and conventions.
