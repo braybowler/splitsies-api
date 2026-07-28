@@ -7,70 +7,70 @@ Laravel 13 REST API for **Splitsies** — a group trip expense-splitting app. Gr
 
 ---
 
-## Quick start (easiest — SQLite, no external services)
+## Quick start (Laravel Sail — recommended)
 
-Requires **PHP 8.5** and **Composer**. Nothing else — no MySQL, no AWS.
+Local dev runs in Docker via [Laravel Sail](https://laravel.com/docs/sail): PHP + **MySQL 8** + **Mailpit**, no local PHP/MySQL setup required beyond **Docker**.
 
 ```sh
-composer install
 cp .env.example .env
+composer install                 # needs PHP + Composer locally; see note below if you don't have them
 php artisan key:generate
-php artisan migrate        # creates the SQLite database automatically
-php artisan serve
+./vendor/bin/sail up -d           # start PHP, MySQL, Mailpit
+./vendor/bin/sail artisan migrate # create the schema in MySQL
 ```
 
-API is now live at **http://localhost:8000**.
+You now have:
 
-That's it. The defaults in `.env.example` use SQLite for the database and the `log` mail driver, so you can run and develop everything — including the magic-link auth flow — without configuring anything external.
+| Service           | URL                                              |
+| ----------------- | ------------------------------------------------ |
+| API               | http://localhost:8000                            |
+| Mailpit (inbox UI)| http://localhost:8025                            |
+
+Stop everything with `./vendor/bin/sail down` (add `-v` to also wipe the MySQL volume).
 
 ### Magic-link login in local dev
 
-Local mail defaults to `MAIL_MAILER=log`, so magic-link emails aren't actually sent — they're written to:
+Outbound mail is caught by **Mailpit** — nothing leaves your machine. Trigger a login, then open **http://localhost:8025** to read the email and click the magic link. No AWS/SES needed to develop auth.
 
-```
-storage/logs/laravel.log
-```
+### Handy: a `sail` alias
 
-Trigger a login, then grab the link from the bottom of that log. No SES account needed to develop auth.
-
-Tip: `php artisan pail` tails the logs live in a readable format.
-
----
-
-## Running everything at once (optional)
+Add to your shell profile so you can type `sail …` instead of `./vendor/bin/sail …`:
 
 ```sh
-composer dev
+alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 ```
 
-Runs the dev server, queue worker, and live log viewer together (via `concurrently`).
+### No PHP/Composer locally?
 
-## Tests & formatting
+Run the initial `composer install` through a throwaway container, then continue with the Sail commands above:
 
 ```sh
-composer test            # or: php artisan test
-./vendor/bin/pint        # format code (Laravel Pint)
+docker run --rm -v "$(pwd):/opt" -w /opt laravelsail/php85-composer:latest composer install --ignore-platform-reqs
 ```
 
 ---
 
-## Switching to MySQL (matches production)
+## Common commands (via Sail)
 
-Production uses **MySQL 8**. To develop against MySQL instead of SQLite, set these in `.env` and re-run `php artisan migrate`:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=splitsies
-DB_USERNAME=root
-DB_PASSWORD=
+```sh
+sail up -d            # start containers
+sail down             # stop containers
+sail artisan migrate  # run migrations
+sail artisan test     # run tests (against the MySQL "testing" database)
+sail pint             # format code (Laravel Pint)
+sail artisan pail     # live, readable log tail
+sail mysql            # open a MySQL shell
 ```
 
-## Production services (not needed for local dev)
+> Tests run against MySQL (not SQLite) — the stack must be up (`sail up -d`) before `sail artisan test`. This keeps tests on the same engine as production.
 
-- **AWS SES** for magic-link email (`MAIL_MAILER=ses`). ⚠️ Request SES production access early — sandbox only sends to verified addresses, and email *is* the auth channel.
-- **AWS S3** for receipt-photo storage (signed URLs).
-- **Frankfurter** (`frankfurter.dev`, no key) + `open.er-api.com` fallback for FX rates.
+---
 
-See [`CLAUDE.md`](./CLAUDE.md) for the full list of environment variables and conventions.
+## Environment
+
+- **Database:** MySQL 8 (`mysql` service). Credentials in `.env` default to Sail's `sail` / `password`, database `splitsies`.
+- **Mail:** Mailpit locally; **AWS SES** in production (`MAIL_MAILER=ses`). ⚠️ Request SES production access early — sandbox only sends to verified addresses, and email *is* the auth channel.
+- **Storage:** **AWS S3** for receipt photos (signed URLs) in production.
+- **FX rates:** **Frankfurter** (`frankfurter.dev`, no key) + `open.er-api.com` fallback.
+
+See [`CLAUDE.md`](./CLAUDE.md) for the full environment variable list and conventions.

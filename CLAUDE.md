@@ -48,18 +48,21 @@ Models/           Eloquent models
 
 ## Commands
 
+Local dev runs in **Laravel Sail** (Docker: PHP + MySQL 8 + Mailpit). See the README for setup.
+
 ```bash
-composer dev        # serve + queue + logs + (no vite here; API only)
-composer test       # php artisan test
-php artisan test    # PHPUnit
-./vendor/bin/pint   # format (Laravel Pint)
-php artisan migrate
+sail up -d            # start containers (API :8000, Mailpit UI :8025)
+sail down             # stop containers
+sail artisan migrate  # run migrations (MySQL)
+sail artisan test     # PHPUnit (runs against the MySQL "testing" db; stack must be up)
+sail pint             # format (Laravel Pint)
+sail artisan pail     # live log tail
 ```
 
 ## Setup notes / TODO for first real work
 
-- **DB:** currently the fresh-scaffold default (SQLite). Switch `.env` to **MySQL 8** per the plan when the DB is provisioned.
-- **Email (magic links):** AWS SES. `MAIL_MAILER=ses`. ⚠️ Request SES production access early — sandbox only sends to verified addresses, and email *is* the auth channel.
+- **DB:** **MySQL 8** via Sail (`mysql` service; db `splitsies`, user `sail`). Tests use the `testing` database. `phpunit.xml` runs tests on MySQL, so the Sail stack must be up.
+- **Email (magic links):** **Mailpit** locally (inbox at http://localhost:8025); **AWS SES** in production (`MAIL_MAILER=ses`). ⚠️ Request SES production access early — sandbox only sends to verified addresses, and email *is* the auth channel.
 - **Storage (receipt photos):** AWS S3, signed URLs, object key stored on the expense.
 - **FX:** Frankfurter (`frankfurter.dev`, no key) + `open.er-api.com` fallback, fetched server-side as-of the expense date, cached in `fx_rates`.
 
