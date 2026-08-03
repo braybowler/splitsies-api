@@ -114,4 +114,18 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Magic Link Login
+    |--------------------------------------------------------------------------
+    |
+    | Passwordless login: a single-use link is emailed to the user. This value
+    | controls how many minutes an issued link stays valid before it expires.
+    |
+    */
+
+    'magic_link' => [
+        'ttl_minutes' => env('MAGIC_LINK_TTL_MINUTES', 15),
+    ],
+
 ];
