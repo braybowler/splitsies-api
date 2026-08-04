@@ -28,6 +28,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Trip memberships for this user (the join rows granting trip access).
+     *
+     * @return HasMany<TripMember, $this>
+     */
+    public function tripMemberships(): HasMany
+    {
+        return $this->hasMany(TripMember::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

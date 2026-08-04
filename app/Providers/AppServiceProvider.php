@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\MagicLinkTokenRepositoryContract;
+use App\Contracts\ParticipantRepositoryContract;
+use App\Contracts\TripRepositoryContract;
 use App\Repositories\MagicLinkTokenRepository;
+use App\Repositories\ParticipantRepository;
+use App\Repositories\TripRepository;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -19,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             MagicLinkTokenRepositoryContract::class,
             MagicLinkTokenRepository::class,
+        );
+
+        $this->app->bind(
+            TripRepositoryContract::class,
+            TripRepository::class,
+        );
+
+        $this->app->bind(
+            ParticipantRepositoryContract::class,
+            ParticipantRepository::class,
         );
     }
 
